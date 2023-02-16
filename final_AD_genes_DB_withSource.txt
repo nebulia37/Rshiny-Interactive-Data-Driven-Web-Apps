@@ -1,0 +1,119 @@
+Gene	Source
+A2M	CTD, HuGE Navigator, DisGeNET
+ABCA1	HuGE Navigator, DisGeNET
+ABCA7	OMIM, CTD, HuGE Navigator, DisGeNET, ClinVar
+ABI3	CTD, DisGeNET
+ACE	CTD, HuGE Navigator, DisGeNET, Open Targets
+ACHE	CTD, DisGeNET, Open Targets
+ADAM10	OMIM, CTD, HuGE Navigator, DisGeNET, ClinVar
+ADAMTS1	CTD, DisGeNET
+AMFR	CTD, DisGeNET
+APH1B	CTD, Open Targets
+APOC1	CTD, HuGE Navigator, DisGeNET
+APOE	OMIM, CTD, HuGE Navigator, DisGeNET, ClinVar, Open Targets
+APP	OMIM, CTD, HuGE Navigator, DisGeNET, ClinVar, Open Targets
+ARC	CTD, DisGeNET
+ATP5F1A	CTD, DisGeNET
+BACE1	CTD, HuGE Navigator, DisGeNET
+BAX	CTD, DisGeNET
+BCHE	CTD, HuGE Navigator, DisGeNET, Open Targets
+BCL2	CTD, DisGeNET
+BDNF	CTD, HuGE Navigator, DisGeNET
+BIN1	CTD, HuGE Navigator, DisGeNET, Open Targets
+CALHM1	OMIM, HuGE Navigator, ClinVar
+CALM1	CTD, DisGeNET
+CASP3	CTD, DisGeNET
+CASS4	CTD, DisGeNET
+CD2AP	CTD, HuGE Navigator, DisGeNET
+CD33	CTD, HuGE Navigator, DisGeNET
+CDK5	DisGeNET, Open Targets
+CHAT	HuGE Navigator, DisGeNET
+CHRNA7	CTD, DisGeNET
+CHRNB2	CTD, DisGeNET
+CLU	CTD, HuGE Navigator, DisGeNET
+CR1	CTD, HuGE Navigator, DisGeNET, Open Targets
+CRH	CTD, DisGeNET
+CST3	CTD, HuGE Navigator, DisGeNET
+CYP2D6	CTD, HuGE Navigator, DisGeNET
+CYP46A1	CTD, HuGE Navigator, DisGeNET
+DHCR24	CTD, DisGeNET
+DPYSL2	CTD, DisGeNET
+EIF2S1	CTD, DisGeNET
+ENO1	CTD, DisGeNET
+EPHA1	CTD, HuGE Navigator, DisGeNET
+ESR1	CTD, HuGE Navigator, DisGeNET
+F2	CTD, DisGeNET
+FERMT2	HuGE Navigator, DisGeNET
+GAB2	HuGE Navigator, DisGeNET
+GAPDHS	CTD, HuGE Navigator, DisGeNET
+GRN	HuGE Navigator, DisGeNET, ClinVar
+GSK3B	CTD, HuGE Navigator, DisGeNET
+HFE	OMIM, CTD, DisGeNET, ClinVar, Open Targets
+HLA-DRB5	CTD, HuGE Navigator, DisGeNET
+HMGCR	HuGE Navigator, Open Targets
+HMOX1	CTD, DisGeNET
+IDE	CTD, HuGE Navigator, DisGeNET
+IGF1	CTD, DisGeNET
+IGF1R	CTD, DisGeNET
+IGF2	CTD, DisGeNET
+IGF2R	CTD, DisGeNET
+IL1B	CTD, HuGE Navigator, DisGeNET
+IL6	HuGE Navigator, DisGeNET
+INPP5D	CTD, HuGE Navigator, DisGeNET
+INS	CTD, DisGeNET
+INSR	CTD, DisGeNET
+IQCK	CTD, DisGeNET
+LEP	CTD, DisGeNET
+LRP1	HuGE Navigator, DisGeNET
+LRRK2	HuGE Navigator, ClinVar
+MAOB	CTD, DisGeNET
+MAPT	CTD, HuGE Navigator, DisGeNET, ClinVar
+MIR100	CTD, DisGeNET
+MIR146A	CTD, DisGeNET
+MIR296	CTD, DisGeNET
+MIR3622B	CTD, DisGeNET
+MIR375	CTD, DisGeNET
+MIR4467	CTD, DisGeNET
+MIR505	CTD, DisGeNET
+MIR708	CTD, DisGeNET
+MIR766	CTD, DisGeNET
+MPO	OMIM, CTD, DisGeNET, ClinVar
+MS4A4A	CTD, HuGE Navigator, DisGeNET
+MTHFR	CTD, HuGE Navigator, DisGeNET
+NCSTN	CTD, HuGE Navigator, DisGeNET
+NECTIN2	CTD, DisGeNET
+NOS3	OMIM, CTD, HuGE Navigator, DisGeNET, ClinVar
+NPY	CTD, DisGeNET
+PCDH11X	CTD, HuGE Navigator, DisGeNET
+PGRMC1	CTD, DisGeNET
+PICALM	CTD, HuGE Navigator, DisGeNET
+PLAU	OMIM, CTD, HuGE Navigator, DisGeNET
+PLCG2	CTD, DisGeNET
+PPARG	CTD, HuGE Navigator, DisGeNET
+PRNP	CTD, HuGE Navigator, DisGeNET, ClinVar
+PSEN1	OMIM, CTD, HuGE Navigator, DisGeNET, ClinVar, Open Targets
+PSEN2	OMIM, CTD, HuGE Navigator, DisGeNET, ClinVar, Open Targets
+PTGS1	DisGeNET, Open Targets
+PTGS2	HuGE Navigator, DisGeNET, Open Targets
+PTK2B	CTD, HuGE Navigator, DisGeNET
+PYY	CTD, DisGeNET
+RELN	CTD, DisGeNET
+SLC2A4	CTD, DisGeNET
+SLC30A4	CTD, DisGeNET
+SLC30A6	CTD, DisGeNET
+SLC6A4	HuGE Navigator, ClinVar
+SNAR-I	CTD, DisGeNET
+SOD2	CTD, DisGeNET
+SORCS1	HuGE Navigator, ClinVar
+SORL1	HuGE Navigator, DisGeNET, ClinVar, Open Targets
+TF	CTD, DisGeNET
+TFAM	CTD, HuGE Navigator, DisGeNET
+TNF	CTD, HuGE Navigator, DisGeNET, ClinVar
+TOMM40	CTD, HuGE Navigator, DisGeNET
+TPI1	CTD, DisGeNET
+TPP1	CTD, DisGeNET
+TREM2	CTD, HuGE Navigator, DisGeNET, ClinVar
+UNC5C	HuGE Navigator, DisGeNET
+VEGFA	CTD, DisGeNET
+VSNL1	CTD, DisGeNET
+WWOX	CTD, DisGeNET
