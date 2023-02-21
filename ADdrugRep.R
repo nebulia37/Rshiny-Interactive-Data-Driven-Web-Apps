@@ -6,7 +6,8 @@ library(dplyr)
 
 setwd("/fs/ess/PCON0041/shunian/AD_drugRep_project_202209/Code/Rshiny/")
 # Define UI
-ui <- fluidPage(theme = shinytheme("united"),
+ui <- fluidPage(
+          theme = shinytheme("united"),
           titlePanel("Drug repurposing for Alzheimer's Disease based on DeepWalk"),
           navbarPage("",
               tabPanel(icon("home"),
@@ -49,6 +50,7 @@ ui <- fluidPage(theme = shinytheme("united"),
                       verbatimTextOutput("txtout_2"),
                       #fluidRow(column(DT::dataTableOutput("single_drug_table"),
                       #                width = 12)),
+                      # output rank and score of the drug, and the network of the drug to AD
                       uiOutput("ui_panel2"),
                       hr()
                     )), # tabPanel 2 for drug repurposing result search 
@@ -97,7 +99,14 @@ ui <- fluidPage(theme = shinytheme("united"),
                       uiOutput("descript_ADgenes",style="text-align:justify;color:black;background-color:lavender;padding:15px;border-radius:10px"),
                     br())),
                   DT::dataTableOutput("AD_geneTable"))), # tabPanel 4 for AD genes
-              tabPanel("Contact"))
+              tabPanel("Download",
+                       h3("Full Data Download",style="text-align:justify;color:dark grey;background-color:lavender;padding:15px;border-radius:10px"),
+                       h4("Download drugs ranked by our drug repurposing method for Alzheimer's Disease"),
+                       downloadButton("downloadData1", "Click to Save"),
+                       h4("Download drug target interactions"),
+                       downloadButton("downloadData2", "Click to Save"),
+                       h4("Download AD associated genes"),
+                       downloadButton("downloadData3", "Click to Save")))
 )
 # Define server function  
 server <- function(input, output) {
@@ -107,17 +116,22 @@ server <- function(input, output) {
     result_data <-read.delim("./new.ranked_score_sum.txt",sep = "\t",header = TRUE)
     top50_drugs = result_data[1:50,]
     output$DrugData <- DT::renderDataTable(
+        server = FALSE,
         DT::datatable({
             top50_drugs
         },
-        options = list(lengthMenu=list(c(5,15,20),c('5','15','20')),pageLength=10,
-                   initComplete = JS(
+        extensions = 'Buttons',
+        options = list(lengthMenu=list(c(5,15,20),c('5','15','20')),
+                     pageLength=10,
+                     initComplete = JS(
                      "function(settings, json) {",
                      "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
                      "}"),
+                     dom = 'Bfrtip',
+                     buttons = c('copy', 'csv', 'excel'),
                    columnDefs=list(list(className='dt-center',targets="_all"))
         ),
-        filter = "top",
+        #filter = "top",
         selection = 'multiple',
         style = 'bootstrap',
         class = 'cell-border stripe',
@@ -128,7 +142,6 @@ server <- function(input, output) {
     #####-----------------------------
     #for tabPanel2 (search drug) output table and plot
     ####------------------------------
-
     datasetInput_2 <- reactive({ 
         if(input$drugname_type=="drug name"){
           single_drug_data = result_data %>% filter(Drug==input$drug_name_id)
@@ -143,37 +156,58 @@ server <- function(input, output) {
             return("The input is not in the drug list")
     
         DT::dataTableOutput("single_drug_table")
-        #plotOutput("plot")
+        hr()
+        # output the network bewtween the drug and AD node
+        cyjShinyOutput('cyjShiny')
     })
   
-    output$single_drug_table = DT::renderDataTable(
-        if (input$submitbutton_1>0) { 
-            DT::datatable({
-              datasetInput_2()
-            },
-            style = 'bootstrap',
-            class = 'display',
-            rownames = FALSE,
-            colnames = c("Rank","NodeID","Drug","Score")
-        )
+    output$single_drug_table =  DT::renderDataTable(
+        datasetInput_2(),
+        options = list(paging = FALSE, searching = FALSE, dom = 't', initComplete = JS(
+          "function(settings, json) {",
+          "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
+          "}")),
+        #style = 'bootstrap',
+        
+        class = 'cell-border stripe',
+        rownames = FALSE,
+        colnames = c("Rank","NodeID","Drug","Score")
+  )
+    # output network 
+    StyleFile = "stylefile.js"
+    loadStyleFile(StyleFile)
+    ## load RData contains list of dataframes of edges and nodes info for each drug from the drug to AD 
+    load("network_forEachDrug.RData")
+    
+    
+    networkInput <- reactive({ 
+      if(input$drugname_type=="drug name"){
+        single_drug_name = input$drug_name_id
+      }else if(input$drugname_type=="drugbank ID"){
+        single_drug_name = result_data$drug_name[match(input$drug_name_id,result_data$drugbank_id)]
+      }
+      
+      tbl.nodes <- network_forEachDrug[single_drug_name][0]
+      tbl.edges <- network_forEachDrug[single_drug_name][1]
+      graph.json <- toJSON(dataFramesToJSON(tbl.edges, tbl.nodes), auto_unbox=TRUE)
+      
+      graph.json
     })
-    output$txtout_2 <- renderText({
-        paste( input$txt1, input$txt2, sep = " " )})
-
-    #output$plot <- renderPlot({
-    #}
-
+    
+    output$cyjShiny <- renderCyjShiny({
+      cyjShiny(graph=networkInput(), layoutName="cola")
+    })
     #####-----------------------------
     #for tabPanel3 (search drug target) output table and plot
     ####------------------------------
     drug_target_data <- read.delim("./new.filtered_Final_drug_target_info.txt", sep = "\t", header=TRUE)
     
-    url1 <- a("CHEMBL", href="https://www.ebi.ac.uk/chembl/")
-    url2 <- a("BindingDB", href="https://www.bindingdb.org/rwd/bind/index.jsp")
-    url3<- a("the Therapeutic Target Database",href="https://db.idrblab.net/ttd/")
-    url4<- a("IUPHAR/BPS Guide to PHARMACOLOGY",href="https://www.guidetopharmacology.org/")
+    url1_drug <- a("CHEMBL", href="https://www.ebi.ac.uk/chembl/")
+    url2_drug <- a("BindingDB", href="https://www.bindingdb.org/rwd/bind/index.jsp")
+    url3_drug<- a("the Therapeutic Target Database",href="https://db.idrblab.net/ttd/")
+    url4_drug<- a("IUPHAR/BPS Guide to PHARMACOLOGY",href="https://www.guidetopharmacology.org/")
     output$descript_drugTarget <- renderUI({
-      tagList("We assembled drug-target interactions and bioactivity data from four commonly used databases:",url1, "(v31),",url2, " (downloaded in November 2022), ", url3," (downloaded in November 2022) and", url4, " (downloaded in November 2022). Of the interactions present in these databases, we retained only those that satisfied the following criteria: (1) binding affinities, including Ki, Kd, IC50, or EC50 ≤10 μM (10,000 nM). (2) gene targets and their respective proteins must have a unique UniProt accession number. (3) protein targets be marked as ‘reviewed’ in the UniProt database22. (4) protein targets found in Homo Sapiens. As a result of these criteria, 10,701 drug-gene interactions between 1,591 US FDA-approved drugs and 1,254 unique genes were obtained and integrated with our PPI network")
+      tagList("We assembled drug-target interactions and bioactivity data from four commonly used databases:",url1_drug, "(v31),",url2_drug, " (downloaded in November 2022), ", url3_drug," (downloaded in November 2022) and", url4_drug, " (downloaded in November 2022). Of the interactions present in these databases, we retained only those that satisfied the following criteria: (1) binding affinities, including Ki, Kd, IC50, or EC50 ≤10 μM (10,000 nM). (2) gene targets and their respective proteins must have a unique UniProt accession number. (3) protein targets be marked as ‘reviewed’ in the UniProt database22. (4) protein targets found in Homo Sapiens. As a result of these criteria, 10,701 drug-gene interactions between 1,591 US FDA-approved drugs and 1,254 unique genes were obtained and integrated with our PPI network")
     })
 
     datasetInput_3 <- reactive({
@@ -190,21 +224,29 @@ server <- function(input, output) {
         print("The input is not in our list")
       }else{
         DT::dataTableOutput("drug_targetTable")
-        #plotOutput("plot")
       }
     })
     
     output$drug_targetTable = DT::renderDataTable(
-      if (input$submitbutton_2>0) { 
-        DT::datatable({
-          datasetInput_3()
-        },
+      server = FALSE,
+      datasetInput_3(),
+        extensions = 'Buttons',
+        options = list(lengthMenu=list(c(5,15,20),c('5','15','20')),
+                       pageLength=10,
+                       initComplete = JS(
+                         "function(settings, json) {",
+                         "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
+                         "}"),
+                       dom = 'Bfrtip',
+                       buttons = c('copy', 'csv', 'excel'),
+                       columnDefs=list(list(className='dt-center',targets="_all"))
+        ),
+        selection = 'multiple',
         style = 'bootstrap',
         class = 'cell-border stripe',
         rownames = FALSE,
         colnames = c("Drug_name", "DrugBank_ID", "CHEMBL_ID", "Gene_name","UniProt","Source","EntrezID")
         )
-      })
   #####-----------------------------
   #for tabPanel4 (present AD genes) output table
   ####------------------------------
@@ -224,11 +266,24 @@ server <- function(input, output) {
   AD_risk_gene_withSource <- read.delim("./GWAS_AD_risk_gene_withSource.txt",header = TRUE,sep="\t",row.names = NULL)
   DB_AD_genes_withSource<- read.delim("./final_AD_genes_DB_withSource.txt",header = TRUE,sep="\t",row.names = NULL)
   
-  output$AD_geneTable = DT::renderDataTable({
+  output$AD_geneTable = DT::renderDataTable(
+      server = FALSE,
       if(input$ADgene_source==1){
         DT::datatable({
           all_AD_gene_withSource
         },
+        extensions = 'Buttons',
+        options = list(lengthMenu=list(c(5,15,20),c('5','15','20')),
+                       pageLength=10,
+                       initComplete = JS(
+                         "function(settings, json) {",
+                         "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
+                         "}"),
+                       dom = 'Bfrtip',
+                       buttons = c('copy', 'csv', 'excel'),
+                       columnDefs=list(list(className='dt-center',targets="_all"))
+        ),
+        selection = 'multiple',
         style = 'bootstrap',
         class = 'cell-border stripe',
         rownames = FALSE,
@@ -237,6 +292,18 @@ server <- function(input, output) {
         DT::datatable({
           experimental_AD_gene_withSource
         },
+        extensions = 'Buttons',
+        options = list(lengthMenu=list(c(5,15,20),c('5','15','20')),
+                       pageLength=10,
+                       initComplete = JS(
+                         "function(settings, json) {",
+                         "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
+                         "}"),
+                       dom = 'Bfrtip',
+                       buttons = c('copy', 'csv', 'excel'),
+                       columnDefs=list(list(className='dt-center',targets="_all"))
+        ),
+
         style = 'bootstrap',
         class = 'cell-border stripe',
         rownames = FALSE,
@@ -246,6 +313,17 @@ server <- function(input, output) {
         DT::datatable({
           AD_risk_gene_withSource
         },
+        extensions = 'Buttons',
+        options = list(lengthMenu=list(c(5,15,20),c('5','15','20')),
+                       pageLength=10,
+                       initComplete = JS(
+                         "function(settings, json) {",
+                         "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
+                         "}"),
+                       dom = 'Bfrtip',
+                       buttons = c('copy', 'csv', 'excel'),
+                       columnDefs=list(list(className='dt-center',targets="_all"))
+        ),
         style = 'bootstrap',
         class = 'cell-border stripe',
         rownames = FALSE,
@@ -254,16 +332,53 @@ server <- function(input, output) {
        DT::datatable({
          DB_AD_genes_withSource
        },
+       extensions = 'Buttons',
+       options = list(lengthMenu=list(c(5,15,20),c('5','15','20')),
+                      pageLength=10,
+                      initComplete = JS(
+                        "function(settings, json) {",
+                        "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
+                        "}"),
+                      dom = 'Bfrtip',
+                      buttons = c('copy', 'csv', 'excel'),
+                      columnDefs=list(list(className='dt-center',targets="_all"))
+       ),
        style = 'bootstrap',
        class = 'cell-border stripe',
        rownames = FALSE,
        colnames = c("Gene","Source"))
      }
-  })
+  )
+  #####-----------------------------
+  #for tabPanel5 (Download)
+  ####------------------------------
+  # Downloadable csv of selected dataset ----
+  output$downloadData1 <- downloadHandler(
+    filename = function() {
+      paste("ranked_drugs_", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(result_data, file, row.names = FALSE)
+    }
+  )
   
+  output$downloadData2 <- downloadHandler(
+    filename = function() {
+      paste("drug_target_interactions_", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(drug_target_data, file, row.names = FALSE)
+    }
+  )
   
-  
-  
+  output$downloadData3 <- downloadHandler(
+    filename = function() {
+      paste("AD_associated_genes_", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(all_AD_gene_withSource, file, row.names = FALSE)
+    }
+  )
 } # server
 
 # Create Shiny object
