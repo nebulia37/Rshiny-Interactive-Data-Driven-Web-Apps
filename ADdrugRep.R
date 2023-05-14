@@ -1,53 +1,69 @@
 # Load R packages
 library(shiny)
 library(shinythemes)
+library(cyjShiny)
 library(DT)
 library(dplyr)
+library(graph)
+library(BiocGenerics)
+library(parallel)
+library(BiocManager)
+options(repos = BiocManager::repositories())
 
-setwd("/fs/ess/PCON0041/shunian/AD_drugRep_project_202209/Code/Rshiny/")
+
+all_druglist = read.delim(file = "new.ranked_score_sum.txt",stringsAsFactors = F,sep = "\t")
+choices_drug = data.frame(
+  drug = all_druglist$Drug,
+  var = all_druglist$Drug
+)
+# List of choices for selectInput
+druglist <- as.list(choices_drug$drug)
+# Name it
+names(druglist) <- choices_drug$var
+
+drug_target_data = read.delim(file = "new.filtered_Final_drug_target_info.txt",stringsAsFactors = F, sep = "\t")
+all_genelist = unique(drug_target_data$Gene_name)
+choices_gene =  data.frame(
+  gene = all_genelist,
+  var = all_genelist
+)
+
+genelist <- as.list(choices_gene$gene)
+names(genelist) <- choices_gene$var
+
 # Define UI
 ui <- fluidPage(
           theme = shinytheme("united"),
           titlePanel("Drug repurposing for Alzheimer's Disease based on DeepWalk"),
           navbarPage("",
-              tabPanel(icon("home"),
-                  fluidRow(column(tags$img(src="Antioquia.png",width="200px",height="260px"),width=2),
-                  column(
-                    br(),
-                    p("Through this application, it is intended to represent the result of our drug repurposing for Alzheimei's Disease(AD) project. 
-                      We constructed a graph  that contains protein-protein interactions, drug-target interactions and AD-associated genes. 
-                      Then, we apply the DeepWalk method on the graph to learn node representations. 
-                      The model then scores and ranks drug candidates based on their proximity to AD-related genes within the network through the learned embeddings. Users can search for the rank information of a certain drug in 'Search drug rank' section",
-                      style="text-align:justify;color:black;background-color:lavender;padding:15px;border-radius:10px"),
-                    br(),
-                    p("Besides the result of drug repurposing, we also represent the reliable drug target interaction assembled from four databases and AD associated gene list we obtained from multiple sources, the detail of which are in the 'Drug target interactions' and 'AD associated genes' section respectively.",style="text-align:justify;color:black;background-color:papayawhip;padding:15px;border-radius:10px"),
-                      width=8),
-                  column(
-                    br(),
-                    tags$img(src="Gobernacion.png",width="200px",height="130px"),
-                    br(),
-                    br(),
-                    p("For more information please check the",em("Anuario Estadístico de Antioquia's"),"page clicking",
-                    br(),
-                    a(href="http://www.antioquiadatos.gov.co/index.php/anuario-estadistico-de-antioquia-2016", "Here",target="_blank"),style="text-align:center;color:black"),
-                    width=2)),
-                    hr(),
-                    tags$style(".fa-database {color:#E87722}"),
-                    h3(p(em("Top50 ranked drugs repurposed for AD "),icon("database",lib = "font-awesome"),style="color:black;text-align:center")),
-                    fluidRow(column(DT::dataTableOutput("DrugData"),
-                                     width = 12)),
-                                    hr(),
-                                    p(em("Developed by"),br("Shunian Xiang"),style="text-align:center; font-family: times")), # tabPanel 1 for home
-              tabPanel("Search drug score", 
+                     tabPanel(icon("home"),
+                              fluidRow(
+                                column(
+                                  br(),
+                                  p("Through this application, it is intended to represent the result of our drug repurposing for Alzheimer's Disease(AD) project. 
+                      We constructed a graph  that contains", tags$span(tags$b(" protein-protein interactions"), style = "color: red;"), ",",  tags$span(tags$b("drug-target interactions"), style = "color: red;"),"and",  tags$span(tags$b("AD-associated genes"), style = "color: red;"),". 
+                      Then, we apply the", tags$span(tags$b("DeepWalk"), style = "color: red;"), "method on the graph to learn node representations. 
+                      The model then scores and ranks drug candidates based on ", tags$span(tags$b("their significance of paths to AD node"), style = "color: red;"), "within the network through the learned embeddings. Users can search for the rank information of a certain drug in 'Search drug rank' section",
+                                    style="text-align:justify;color:black;background-color:lavender;padding:15px;border-radius:10px"),
+                                  br(),
+                                  p("Besides the result of drug repurposing, we also represent the ", tags$span(tags$b("reliable drug target interactions"), style = "color: red;"), " assembled from four databases and ", tags$span(tags$b("AD associated gene list"), style = "color: red;"), " we obtained from multiple sources, the detail of which are in the ", tags$span(tags$b("'Drug target interactions'"), style = "color: red;"), "and",tags$span(tags$b(" 'AD associated genes' "), style = "color: red;")," section respectively.",style="text-align:justify;color:black;background-color:papayawhip;padding:15px;border-radius:10px"),
+                                  width=7),
+                                column(tags$img(src="flowchart.jpeg",width="600px",height="300px"),width=5)),
+                              hr(),
+                              tags$style(".fa-database {color:#E87722}"),
+                              h3(p(em("Top50 ranked drugs repurposed for AD "),icon("database",lib = "font-awesome"),style="color:black;text-align:center")),
+                              fluidRow(column(DT::dataTableOutput("DrugData"),
+                                              width = 12)),
+                              hr(),
+                              p(em("Developed by"),br("Shunian Xiang"),style="text-align:center; font-family: times")), # tabPanel 1 for home
+                     tabPanel("Search drug rank", 
                     sidebarPanel(
-                      tags$h3("Input drug name/drugbank ID for search:"),
-                      radioButtons("drugname_type", "",c("drug name","drugbank ID"),selected = "drug name"),
-                      textInput("drug_name_id", "Drug Name or ID:",value="galantamine"),
-                      actionButton("submitbutton_1", "Submit", class = "btn btn-primary")), # sidebarPanel
+                      tags$h3("Input drug name for search:"),
+                      selectInput("drug_name_id", label = "Drug Name",choices = druglist),
+                     hr()),
                     mainPanel(
                       h2("Get the rank of a drug by searching"),
                       h4("The higher the rank, the more chance that the drug may have the potential to treat AD"),
-                      verbatimTextOutput("txtout_2"),
                       #fluidRow(column(DT::dataTableOutput("single_drug_table"),
                       #                width = 12)),
                       # output rank and score of the drug, and the network of the drug to AD
@@ -59,8 +75,9 @@ ui <- fluidPage(
                       tags$h3("Input drug name/gene symbol for search:"),
                       radioButtons("search_type", label ="",choiceNames = list("Search drug","Search gene"),choiceValues = list(
                         "drug", "gene"),selected = "drug"),
-                      textInput("search_name_id", "Drug Name or Gene Symbol:",value = "tacrine"),
-                      actionButton("submitbutton_2", "Submit", class = "btn btn-primary")), # sidebarPanel
+                      #textInput("search_name_id", "Drug Name or Gene Symbol:",value = "tacrine"),
+                      selectInput("search_name_id", "Drug Name or Gene Symbol:",choices  = druglist)),
+                       # sidebarPanel
                     mainPanel(
                       h2("Reliable drug target interactions for 1591 FDA approved drugs"),
                       verbatimTextOutput("txtout_3"),
@@ -106,10 +123,32 @@ ui <- fluidPage(
                        h4("Download drug target interactions"),
                        downloadButton("downloadData2", "Click to Save"),
                        h4("Download AD associated genes"),
-                       downloadButton("downloadData3", "Click to Save")))
+                       downloadButton("downloadData3", "Click to Save"),
+                       h4("Download protein protein interactions"),
+                       downloadButton("downloadData4", "Click to Save")))
 )
 # Define server function  
-server <- function(input, output) {
+create_legend <- function() {
+  # Add legend items based on your network's node and edge styles
+  # Adjust the color and label values to match your style
+  legend_items <- list(
+    list(color = "#EA3423", label = "AD node"),
+    list(color = "#B5D7E4", label = "Gene node"),
+    list(color = "#F2A93B", label = "Drug node")
+  )
+  
+  legend_html <- lapply(legend_items, function(item) {
+    tags$div(
+      class = "cytoscape-legend-item",
+      tags$div(class = "color-box", style = paste0("background-color: ", item$color, ";")),
+      tags$div(item$label)
+    )
+  })
+  
+  return(legend_html)
+}
+
+server <- function(input, output, session) {
     #####-----------------------------
     #for tabPanel 1 (homepage) output table
     ####------------------------------
@@ -139,63 +178,90 @@ server <- function(input, output) {
         colnames = c("Rank","NodeID","Drug","Score")
     ))
   
-    #####-----------------------------
+   #####-----------------------------
     #for tabPanel2 (search drug) output table and plot
     ####------------------------------
     datasetInput_2 <- reactive({ 
-        if(input$drugname_type=="drug name"){
-          single_drug_data = result_data %>% filter(Drug==input$drug_name_id)
-        }else if(input$drugname_type=="drugbank ID"){
-          single_drug_data = result_data %>% filter(NodeID==input$drug_name_id)
-        }
-        single_drug_data
+        single_drug_data_2 = result_data %>% filter(Drug==tolower(input$drug_name_id))  
+        single_drug_data_2
     })
-  
-    output$ui_panel2 <- renderUI({
-        if(input$submitbutton_1>0 && nrow(datasetInput_2()) == 0)
-            return("The input is not in the drug list")
-    
-        DT::dataTableOutput("single_drug_table")
-        hr()
-        # output the network bewtween the drug and AD node
-        cyjShinyOutput('cyjShiny')
-    })
-  
+
     output$single_drug_table =  DT::renderDataTable(
-        datasetInput_2(),
-        options = list(paging = FALSE, searching = FALSE, dom = 't', initComplete = JS(
-          "function(settings, json) {",
-          "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
-          "}")),
-        #style = 'bootstrap',
+      datasetInput_2(),
+      options = list(paging = FALSE, searching = FALSE, dom = 't', initComplete = JS(
+        "function(settings, json) {",
+        "$(this.api().table().header()).css({'background-color': 'moccasin', 'color': '1c1b1b'});",
+        "}")),
+      #style = 'bootstrap',
+      
+      class = 'cell-border stripe',
+      rownames = FALSE,
+      colnames = c("Rank","NodeID","Drug","Score")
+    )
+
+    output$ui_panel2 <- renderUI({
         
-        class = 'cell-border stripe',
-        rownames = FALSE,
-        colnames = c("Rank","NodeID","Drug","Score")
-  )
-    # output network 
-    StyleFile = "stylefile.js"
-    loadStyleFile(StyleFile)
+        if( nrow(datasetInput_2()) == 0)
+            print("The input is not in the drug list")
+        else{
+            if( nrow(datasetInput_2()) != 0){
+              fluidRow(
+                DT::dataTableOutput("single_drug_table"),
+                hr(),
+                h4("Below is the visulization of all the paths linking the drug node and AD node with a path length<=3:"),
+                # output the network bewtween the drug and AD node
+                column(cyjShinyOutput('cyjShiny'), width=10),
+                column(htmlOutput("legend"),width=2),
+                tags$style(HTML("
+                  .cytoscape-legend {
+                  padding: 10px;
+                  border: 1px solid #ccc;
+                  }
+                  .cytoscape-legend-item {
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 5px;
+                  }
+                  .cytoscape-legend-item .color-box {
+                  width: 20px;
+                  height: 20px;
+                  margin-right: 5px;
+                  }
+                "))
+                # output the table of drug rank info
+                
+              )
+        }
+        }
+    })
+  
+    
+    
     ## load RData contains list of dataframes of edges and nodes info for each drug from the drug to AD 
-    load("network_forEachDrug.RData")
+    load("network_forEachDrug.RData") # list of edges and data.frame of nodes
     
     
     networkInput <- reactive({ 
-      if(input$drugname_type=="drug name"){
-        single_drug_name = input$drug_name_id
-      }else if(input$drugname_type=="drugbank ID"){
-        single_drug_name = result_data$drug_name[match(input$drug_name_id,result_data$drugbank_id)]
-      }
-      
-      tbl.nodes <- network_forEachDrug[single_drug_name][0]
-      tbl.edges <- network_forEachDrug[single_drug_name][1]
+      single_drug_name = tolower(input$drug_name_id)
+     
+      tbl.edges <- network_forEachDrug[[1]][single_drug_name][[1]]
+      colnames(tbl.edges) <- c("source", "target","interaction")
+      indiv_net_node <- unique(c(tbl.edges$source,tbl.edges$target))
+      tbl.nodes <- network_forEachDrug[[2]] %>% filter(id %in% indiv_net_node)
+      #tbl.nodes <- network_forEachDrug[[2]][single_drug_name]
       graph.json <- toJSON(dataFramesToJSON(tbl.edges, tbl.nodes), auto_unbox=TRUE)
       
       graph.json
     })
     
     output$cyjShiny <- renderCyjShiny({
-      cyjShiny(graph=networkInput(), layoutName="cola")
+      StyleFile='ADrep_style.js'
+      cyj <- cyjShiny(graph = networkInput(), layoutName = "cola", styleFile = StyleFile)
+      cyj
+    })
+    
+    output$legend <- renderUI({
+      create_legend()
     })
     #####-----------------------------
     #for tabPanel3 (search drug target) output table and plot
@@ -207,7 +273,15 @@ server <- function(input, output) {
     url3_drug<- a("the Therapeutic Target Database",href="https://db.idrblab.net/ttd/")
     url4_drug<- a("IUPHAR/BPS Guide to PHARMACOLOGY",href="https://www.guidetopharmacology.org/")
     output$descript_drugTarget <- renderUI({
-      tagList("We assembled drug-target interactions and bioactivity data from four commonly used databases:",url1_drug, "(v31),",url2_drug, " (downloaded in November 2022), ", url3_drug," (downloaded in November 2022) and", url4_drug, " (downloaded in November 2022). Of the interactions present in these databases, we retained only those that satisfied the following criteria: (1) binding affinities, including Ki, Kd, IC50, or EC50 ≤10 μM (10,000 nM). (2) gene targets and their respective proteins must have a unique UniProt accession number. (3) protein targets be marked as ‘reviewed’ in the UniProt database22. (4) protein targets found in Homo Sapiens. As a result of these criteria, 10,701 drug-gene interactions between 1,591 US FDA-approved drugs and 1,254 unique genes were obtained and integrated with our PPI network")
+      tagList("We assembled drug-target interactions and bioactivity data from four commonly used databases:",url1_drug, "(v31),",url2_drug, " (downloaded in November 2022), ", url3_drug," (downloaded in November 2022) and", url4_drug, " (downloaded in November 2022). Of the interactions present in these databases, we retained only those that satisfied the following criteria: (1) binding affinities, including Ki, Kd, IC50, or EC50 ≤10 μM (10,000 nM). (2) gene targets and their respective proteins must have a unique UniProt accession number. (3) protein targets be marked as ‘reviewed’ in the UniProt database22. (4) protein targets found in Homo Sapiens. As a result of these criteria, ",tags$span(tags$b("10,701"), style = "color: red;")," drug-gene interactions between ",tags$span(tags$b("1,591"), style = "color: red;")," US FDA-approved drugs and ",tags$span(tags$b("1,254"), style = "color: red;")," unique genes were obtained and integrated with our PPI network")
+    })
+    
+    observeEvent(input$search_type, {
+      if (input$search_type == "drug") {
+        updateSelectInput(session, "search_name_id", choices = druglist)
+      } else if (input$search_type == "gene") {
+        updateSelectInput(session, "search_name_id", choices = genelist)
+      }
     })
 
     datasetInput_3 <- reactive({
@@ -220,14 +294,14 @@ server <- function(input, output) {
     })
     
     output$ui_panel3 <- renderUI({
-      if(input$submitbutton_2>0 && nrow(datasetInput_3()) == 0){
+      if(nrow(datasetInput_3()) == 0){
         print("The input is not in our list")
       }else{
         DT::dataTableOutput("drug_targetTable")
       }
     })
     
-    output$drug_targetTable = DT::renderDataTable(
+    output$drug_targetTable = DT::renderDT(
       server = FALSE,
       datasetInput_3(),
         extensions = 'Buttons',
@@ -258,14 +332,15 @@ server <- function(input, output) {
   url6<- a("Open Targets",href="https://www.opentargets.org/")
   
   output$descript_ADgenes <- renderUI({
-      tagList("We assembled multiple data sources to get AD-associated genes. First, we downloaded 54 genes related to amyloid and 27 genes related to tauopathy from the Supplementary Data of [1], where the author collected experimentally validated genes that satisfied at least one of the following criteria: i) gene validation in large-scale amyloid or tauopathy GWAS studies; ii) in vivo experimental model evidence that knockdown or overexpression of the gene leads to AD-like amyloid or tau pathology. Second, we obtained 188 unique late-onset AD common risk genes identified by eight large-scale genetic studies [2-8]. Third, we identified a set of 93 AD-associated genes  curated in at least 2 of 6 following disease gene databases: ",url1,", ",url2,", ",url3,", ",url4,", ",url5,", ",url6,". After moving duplicates, we obtained 233 AD-associated genes in total")
+      tagList("We assembled multiple data sources to get AD-associated genes.",tags$span(tags$b("First"), style = "color: red;"),", we downloaded ",tags$span(tags$b("54"), style = "color: red;")," genes related to amyloid and ",tags$span(tags$b("27"), style = "color: red;")," genes related to tauopathy from the Supplementary Data of [1], where the author collected experimentally validated genes that satisfied at least one of the following criteria: i) gene validation in large-scale amyloid or tauopathy GWAS studies; ii) in vivo experimental model evidence that knockdown or overexpression of the gene leads to AD-like amyloid or tau pathology. ",tags$span(tags$b("Second"), style = "color: red;"),", we obtained ",tags$span(tags$b("188"), style = "color: red;")," unique late-onset AD common risk genes identified by eight large-scale genetic studies [2-8].",tags$span(tags$b("Third"), style = "color: red;"),", we identified a set of ",tags$span(tags$b("93"), style = "color: red;")," AD-associated genes  curated in at least 2 of 6 following disease gene databases: ",url1,", ",url2,", ",url3,", ",url4,", ",url5,", ",url6,". After moving duplicates, we obtained ",tags$span(tags$b("233"), style = "color: red;")," AD-associated genes in total")
   })
   
   all_AD_gene_withSource <- read.delim("./all_AD_genes_withSource.txt",sep="\t",header=TRUE,row.names = NULL)
   experimental_AD_gene_withSource <- read.delim("./Experimentally_validated_genes.txt",header = TRUE,sep = "\t",row.names = NULL)
   AD_risk_gene_withSource <- read.delim("./GWAS_AD_risk_gene_withSource.txt",header = TRUE,sep="\t",row.names = NULL)
   DB_AD_genes_withSource<- read.delim("./final_AD_genes_DB_withSource.txt",header = TRUE,sep="\t",row.names = NULL)
-  
+  all_PPIs<-read.delim("./PPI_net.txt",header=TRUE,sep="\t",row.names=NULL)
+
   output$AD_geneTable = DT::renderDataTable(
       server = FALSE,
       if(input$ADgene_source==1){
@@ -377,6 +452,15 @@ server <- function(input, output) {
     },
     content = function(file) {
       write.csv(all_AD_gene_withSource, file, row.names = FALSE)
+    }
+  )
+
+  output$downloadData4 <- downloadHandler(
+    filename = function() {
+      paste("Protein_protein_interactions_", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(all_PPIs, file, row.names = FALSE)
     }
   )
 } # server

@@ -1,0 +1,13 @@
+name: publish
+title: publish
+username:
+account: nebulia
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8294626
+bundleId: 6839004
+url: https://nebulia.shinyapps.io/publish/
+when: 1676257289.83391
+lastSyncTime: 1676257289.83391
+asMultiple: FALSE
+asStatic: FALSE

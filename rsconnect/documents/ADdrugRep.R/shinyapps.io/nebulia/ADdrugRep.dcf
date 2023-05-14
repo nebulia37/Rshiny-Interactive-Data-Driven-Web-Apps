@@ -1,0 +1,14 @@
+name: ADdrugRep
+title: ADdrugRep
+username:
+account: nebulia
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8616177
+bundleId: 7055076
+url: https://nebulia.shinyapps.io/ADdrugRep/
+when: 1680740665.91064
+lastSyncTime: 1680740665.91064
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: ADdrugRep_Copy.R|exam.R|example.R|get_network_forEachDrug.R
